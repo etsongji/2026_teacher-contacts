@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>교사 연락처</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f4f6fb;
+    --card: #ffffff;
+    --card-hover: #f0f4ff;
+    --accent: #3b6ef8;
+    --accent2: #6c4fff;
+    --text: #1a1d2e;
+    --muted: #8891aa;
+    --border: #e2e6f0;
+    --tag-bg: #eef1fa;
+    --header-bg: #ffffff;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Noto Sans KR', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding-bottom: 40px;
+  }
+
+  header {
+    background: var(--header-bg);
+    border-bottom: 1px solid var(--border);
+    padding: 28px 20px 16px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  }
+
+  .header-title {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 4px;
+  }
+
+  .header-sub {
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 14px;
+  }
+
+  .search-bar { position: relative; }
+
+  .search-bar input {
+    width: 100%;
+    background: var(--bg);
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 16px 12px 42px;
+    color: var(--text);
+    font-size: 15px;
+    font-family: 'Noto Sans KR', sans-serif;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .search-bar input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(59,110,248,0.12);
+  }
+
+  .search-bar input::placeholder { color: var(--muted); }
+
+  .search-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--muted);
+    font-size: 16px;
+    pointer-events: none;
+  }
+
+  .filter-row {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 12px 20px 0;
+    scrollbar-width: none;
+    background: #fff;
+  }
+  .filter-row::-webkit-scrollbar { display: none; }
+
+  .filter-btn {
+    background: var(--tag-bg);
+    border: 1.5px solid var(--border);
+    border-radius: 20px;
+    padding: 6px 14px;
+    color: var(--muted);
+    font-size: 13px;
+    font-family: 'Noto Sans KR', sans-serif;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: all 0.2s;
+    flex-shrink: 0;
+    font-weight: 500;
+  }
+
+  .filter-btn.active, .filter-btn:hover {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+
+  .status-bar {
+    display: flex;
+    justify-content: flex-end;
+    padding: 10px 20px 2px;
+    font-size: 11px;
+    font-family: 'DM Mono', monospace;
+    color: var(--muted);
+  }
+
+  .contacts-list { padding: 4px 16px 0; }
+
+  .section-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    color: var(--muted);
+    text-transform: uppercase;
+    padding: 14px 4px 6px;
+  }
+
+  .contact-card {
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    border-radius: 16px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+    color: inherit;
+    margin-bottom: 8px;
+    animation: fadeIn 0.3s ease forwards;
+    opacity: 0;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+  }
+
+  .contact-card:hover, .contact-card:active {
+    background: var(--card-hover);
+    border-color: var(--accent);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 20px rgba(59,110,248,0.12);
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .avatar {
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 17px;
+    font-weight: 700;
+    flex-shrink: 0;
+    color: #fff;
+  }
+
+  .contact-info { flex: 1; min-width: 0; }
+
+  .contact-name {
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 3px;
+    letter-spacing: -0.3px;
+    color: var(--text);
+  }
+
+  .contact-subject {
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 3px;
+  }
+
+  .contact-phone {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--accent);
+    font-weight: 500;
+  }
+
+  .call-btn {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 2px 10px rgba(59,110,248,0.25);
+    transition: transform 0.15s, box-shadow 0.15s;
+    font-size: 18px;
+  }
+
+  .contact-card:hover .call-btn {
+    transform: scale(1.1);
+    box-shadow: 0 4px 20px rgba(59,110,248,0.4);
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--muted);
+  }
+  .empty-state .emoji { font-size: 36px; margin-bottom: 10px; }
+  .empty-state p { font-size: 14px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-title">📋 교사 연락처</div>
+  <div class="header-sub">이름을 탭하면 바로 전화 연결</div>
+  <div class="search-bar">
+    <span class="search-icon">🔍</span>
+    <input type="text" id="searchInput" placeholder="이름 또는 교과로 검색..." oninput="filterContacts()">
+  </div>
+</header>
+
+<div class="filter-row" id="filterRow"></div>
+<div class="status-bar"><span id="countBadge"></span></div>
+<div class="contacts-list" id="contactsList"></div>
+
+<script>
+const CONTACTS = [
+  {name:"강정숙", subject:"수학", phone:"010-6463-1654"},
+  {name:"권오미", subject:"일반사회", phone:"010-5278-0603"},
+  {name:"김기준", subject:"수학", phone:"010-8844-5897"},
+  {name:"김상훈", subject:"체육", phone:"010-3711-8074"},
+  {name:"김선미", subject:"사서", phone:"010-8719-7365"},
+  {name:"김승혁", subject:"물리", phone:"010-3333-6899"},
+  {name:"김은지", subject:"일반사회", phone:"010-7599-6438"},
+  {name:"김현우", subject:"국어", phone:"010-2461-3276"},
+  {name:"김현정", subject:"생명과학", phone:"010-9406-4085"},
+  {name:"김현진", subject:"역사", phone:"010-5560-4904"},
+  {name:"김혜민", subject:"보건", phone:"010-8561-2560"},
+  {name:"김혜인", subject:"영어", phone:"010-2392-1461"},
+  {name:"김호성", subject:"진로", phone:"010-8842-4979"},
+  {name:"김희수", subject:"수학", phone:"010-7670-5037"},
+  {name:"나윤주", subject:"윤리", phone:"010-9857-6860"},
+  {name:"박동환", subject:"지구과학", phone:"010-3289-5385"},
+  {name:"박익선", subject:"수학", phone:"010-4465-7238"},
+  {name:"박지훈", subject:"정보", phone:"010-8887-5792"},
+  {name:"변지형", subject:"지구과학", phone:"010-2325-2570"},
+  {name:"서예림", subject:"음악", phone:"010-2900-0030"},
+  {name:"송지언", subject:"영어", phone:"010-5192-2897"},
+  {name:"신동호", subject:"국어", phone:"010-5566-1763"},
+  {name:"신현준", subject:"지리", phone:"010-4001-7149"},
+  {name:"심소라", subject:"영양", phone:"010-5596-0085"},
+  {name:"안근호", subject:"일본어", phone:""},
+  {name:"안진형", subject:"물리", phone:"010-3463-5426"},
+  {name:"우만식", subject:"역사", phone:"010-3679-3057"},
+  {name:"위태용", subject:"체육", phone:"010-7372-8897"},
+  {name:"유진희", subject:"영어", phone:"010-9737-5422"},
+  {name:"육감우", subject:"수학", phone:"010-3311-1005"},
+  {name:"윤준호", subject:"수학", phone:"010-9218-5719"},
+  {name:"이민정", subject:"수학", phone:"010-2996-5573"},
+  {name:"이병모", subject:"생명과학", phone:"010-3474-2707"},
+  {name:"이샘나", subject:"영양", phone:"010-4780-7276"},
+  {name:"이슬이", subject:"영어", phone:"010-5761-8667"},
+  {name:"이준현", subject:"국어", phone:"010-3401-1680"},
+  {name:"이한별", subject:"국어", phone:"010-2295-4256"},
+  {name:"전은영", subject:"영어", phone:"010-4394-0423"},
+  {name:"전효나", subject:"지리", phone:"010-8720-2976"},
+  {name:"전희주", subject:"프랑스어", phone:"010-2331-0562"},
+  {name:"정미정", subject:"영어", phone:"010-8641-3392"},
+  {name:"정혜정", subject:"미술", phone:"010-4536-2931"},
+  {name:"조남혁", subject:"역사", phone:"010-2644-9827"},
+  {name:"최서은", subject:"국어", phone:"010-5487-0639"},
+  {name:"표민희", subject:"화학", phone:"010-9602-3361"},
+  {name:"한건희", subject:"화학", phone:"010-9270-0519"},
+  {name:"홍성건", subject:"체육", phone:"010-2694-2248"},
+  {name:"황인환", subject:"국어", phone:"010-2744-9027"},
+  {name:"황희정", subject:"국어", phone:"010-9218-0326"},
+];
+
+const SUBJECT_COLORS = {
+  "수학": "linear-gradient(135deg,#4f7cff,#7c4fff)",
+  "국어": "linear-gradient(135deg,#ff6b6b,#ee5a24)",
+  "영어": "linear-gradient(135deg,#1dd1a1,#10ac84)",
+  "역사": "linear-gradient(135deg,#ff9f43,#ee5a24)",
+  "지리": "linear-gradient(135deg,#f9a825,#feca57)",
+  "일반사회": "linear-gradient(135deg,#ff6b81,#c0392b)",
+  "윤리": "linear-gradient(135deg,#a29bfe,#6c5ce7)",
+  "물리": "linear-gradient(135deg,#74b9ff,#0984e3)",
+  "화학": "linear-gradient(135deg,#fd79a8,#e84393)",
+  "생명과학": "linear-gradient(135deg,#55efc4,#00b894)",
+  "지구과학": "linear-gradient(135deg,#fdcb6e,#e17055)",
+  "체육": "linear-gradient(135deg,#d63031,#e17055)",
+  "음악": "linear-gradient(135deg,#a29bfe,#fd79a8)",
+  "미술": "linear-gradient(135deg,#fd79a8,#fdcb6e)",
+  "정보": "linear-gradient(135deg,#00cec9,#0984e3)",
+  "진로": "linear-gradient(135deg,#6c5ce7,#a29bfe)",
+  "보건": "linear-gradient(135deg,#ff7675,#d63031)",
+  "영양": "linear-gradient(135deg,#55efc4,#fdcb6e)",
+  "사서": "linear-gradient(135deg,#b2bec3,#636e72)",
+  "일본어": "linear-gradient(135deg,#e17055,#d63031)",
+  "프랑스어": "linear-gradient(135deg,#0984e3,#74b9ff)",
+};
+
+let currentFilter = '전체';
+
+function buildFilters() {
+  const subjects = ['전체', ...new Set(CONTACTS.map(c => c.subject).filter(Boolean))].sort((a,b)=> a==='전체'?-1:a.localeCompare(b,'ko'));
+  document.getElementById('filterRow').innerHTML = subjects.map(s =>
+    `<button class="filter-btn ${s === currentFilter ? 'active' : ''}" onclick="setFilter('${s}', this)">${s}</button>`
+  ).join('');
+}
+
+function setFilter(subject, btn) {
+  currentFilter = subject;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  filterContacts();
+}
+
+function filterContacts() {
+  const query = document.getElementById('searchInput').value.toLowerCase().trim();
+  let filtered = CONTACTS;
+  if (currentFilter !== '전체') filtered = filtered.filter(c => c.subject === currentFilter);
+  if (query) filtered = filtered.filter(c =>
+    c.name.toLowerCase().includes(query) || (c.subject||'').toLowerCase().includes(query)
+  );
+  renderContacts(filtered);
+}
+
+function renderContacts(contacts) {
+  document.getElementById('countBadge').textContent = `총 ${contacts.length}명`;
+  const list = document.getElementById('contactsList');
+
+  if (contacts.length === 0) {
+    list.innerHTML = `<div class="empty-state"><div class="emoji">🔍</div><p>검색 결과가 없습니다</p></div>`;
+    return;
+  }
+
+  const sorted = [...contacts].sort((a,b) => a.name.localeCompare(b.name, 'ko'));
+  let html = '';
+  let prevInitial = '';
+
+  sorted.forEach((c, i) => {
+    const initial = c.name[0];
+    if (initial !== prevInitial) {
+      html += `<div class="section-label">${initial}</div>`;
+      prevInitial = initial;
+    }
+    const phoneClean = c.phone.replace(/[^0-9]/g, '');
+    const color = SUBJECT_COLORS[c.subject] || "linear-gradient(135deg,#4f7cff,#7c4fff)";
+    const cardOpen = c.phone
+      ? `<a class="contact-card" href="tel:${phoneClean}" style="animation-delay:${Math.min(i,25)*0.03}s">`
+      : `<div class="contact-card" style="animation-delay:${Math.min(i,25)*0.03}s; opacity:0.6;">`;
+    const cardClose = c.phone ? '</a>' : '</div>';
+    const callBtn = c.phone
+      ? `<div class="call-btn">📞</div>`
+      : `<div class="call-btn" style="background:#e2e6f0;box-shadow:none;font-size:13px;color:#aaa">—</div>`;
+
+    html += `
+      ${cardOpen}
+        <div class="avatar" style="background:${color}">${c.name[0]}</div>
+        <div class="contact-info">
+          <div class="contact-name">${c.name}</div>
+          ${c.subject ? `<div class="contact-subject">${c.subject}</div>` : ''}
+          <div class="contact-phone">${c.phone || '번호 미등록'}</div>
+        </div>
+        ${callBtn}
+      ${cardClose}`;
+  });
+
+  list.innerHTML = html;
+}
+
+buildFilters();
+filterContacts();
+</script>
+</body>
+</html>
