@@ -308,6 +308,14 @@
 const CONTACTS = [
   {name:"이규훈", subject:"교장", phone:"010-5247-4167"},
   {name:"임성규", subject:"교감", phone:"010-9460-9640"},
+  {name:"김문용", subject:"행정부장", phone:"010-6750-1084"},
+  {name:"김미경", subject:"행정실장", phone:"010-2014-9895"},
+  {name:"박미선", subject:"행정실무사", phone:"010-2074-8736"},
+  {name:"박소현", subject:"주무관", phone:"010-4471-4871"},
+  {name:"박지웅", subject:"주무관", phone:"010-2824-1940"},
+  {name:"이충규", subject:"주무관", phone:"010-3410-6649"},
+  {name:"조은주", subject:"교무실무사", phone:"010-2649-6158"},
+  {name:"김민정", subject:"교무실무사", phone:"010-4709-1429"},
   {name:"강정숙", subject:"수학", phone:"010-6463-1654"},
   {name:"권오미", subject:"일반사회", phone:"010-5278-0603"},
   {name:"김기준", subject:"수학", phone:"010-8844-5897"},
@@ -361,6 +369,11 @@ const CONTACTS = [
 const SUBJECT_COLORS = {
   "교장":"linear-gradient(135deg,#2d3436,#636e72)",
   "교감":"linear-gradient(135deg,#485460,#808e9b)",
+  "행정부장":"linear-gradient(135deg,#e17055,#d35400)",
+  "행정실장":"linear-gradient(135deg,#e67e22,#f39c12)",
+  "행정실무사":"linear-gradient(135deg,#f9ca24,#f0932b)",
+  "주무관":"linear-gradient(135deg,#badc58,#6ab04c)",
+  "교무실무사":"linear-gradient(135deg,#22a6b3,#30336b)",
   "수학":"linear-gradient(135deg,#4f7cff,#7c4fff)",
   "국어":"linear-gradient(135deg,#ff6b6b,#ee5a24)",
   "영어":"linear-gradient(135deg,#1dd1a1,#10ac84)",
@@ -410,30 +423,43 @@ function closeSheet() {
 function saveContact() {
   if (!currentContact) return;
   const c = currentContact;
-  // vCard 생성 후 다운로드 → 모바일에서 자동으로 연락처 앱으로 열림
-  const vcard = [
-    'BEGIN:VCARD',
-    'VERSION:3.0',
-    `FN:${c.name}`,
-    `N:${c.name[0]};${c.name.slice(1)};;;`,
-    `TEL;TYPE=CELL:${c.phone}`,
-    `TITLE:${c.subject} 교사`,
-    'END:VCARD'
-  ].join('\r\n');
 
-  const blob = new Blob([vcard], { type: 'text/vcard;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `${c.name}.vcf`;
-  a.click();
-  URL.revokeObjectURL(url);
+  const vcard = [
+    "BEGIN:VCARD",
+    "VERSION:3.0",
+    "FN:" + c.name,
+    "N:" + c.name[0] + ";" + c.name.slice(1) + ";;;",
+    "TEL;TYPE=CELL:" + c.phone,
+    "TITLE:" + c.subject,
+    "END:VCARD"
+  ].join("\r\n");
+
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+
+  if (isIOS) {
+    // 아이폰: data URI 방식
+    const dataUri = "data:text/vcard;charset=utf-8," + encodeURIComponent(vcard);
+    window.location.href = dataUri;
+  } else {
+    // 안드로이드: Blob 다운로드
+    const blob = new Blob([vcard], { type: "text/vcard;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = c.name + ".vcf";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
   closeSheet();
 }
 
 // ── 필터 & 렌더 ──
 function buildFilters() {
-  const subjects = ['전체', ...new Set(CONTACTS.map(c => c.subject).filter(Boolean))].sort((a,b) => a==='전체'?-1:a.localeCompare(b,'ko'));
+  const pinned = ['전체','교장','교감','행정부장','행정실장','행정실무사','주무관','교무실무사'];
+  const rest = [...new Set(CONTACTS.map(c => c.subject).filter(s => !pinned.includes(s)))].sort((a,b) => a.localeCompare(b,'ko'));
+  const subjects = [...pinned.filter(p => p==='전체' || CONTACTS.some(c => c.subject===p)), ...rest];
   document.getElementById('filterRow').innerHTML = subjects.map(s =>
     `<button class="filter-btn ${s===currentFilter?'active':''}" onclick="setFilter('${s}',this)">${s}</button>`
   ).join('');
@@ -465,7 +491,12 @@ function renderContacts(contacts) {
     return;
   }
 
-  const sorted = [...contacts].sort((a,b) => a.name.localeCompare(b.name,'ko'));
+  const order = ['교장','교감','행정부장','행정실장','행정실무사','주무관','교무실무사'];
+  const sorted = [...contacts].sort((a,b) => {
+    const ai = order.indexOf(a.subject), bi = order.indexOf(b.subject);
+    if (ai !== -1 || bi !== -1) return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
+    return a.name.localeCompare(b.name,'ko');
+  });
   let html = '';
   let prevInitial = '';
 
