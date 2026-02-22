@@ -235,6 +235,72 @@
   }
 
   .sheet-cancel:hover { background: #f4f6fb; }
+
+  /* ── 저장 안내 팝업 ── */
+  .save-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+    z-index: 400; display: flex; align-items: center; justify-content: center;
+    padding: 24px; backdrop-filter: blur(4px); animation: fadeBg 0.2s ease;
+  }
+
+  .save-popup {
+    background: #fff; border-radius: 24px; padding: 28px 24px;
+    width: 100%; max-width: 360px;
+    animation: popIn 0.25s cubic-bezier(.32,1,.6,1);
+    box-shadow: 0 8px 40px rgba(0,0,0,0.18);
+  }
+
+  @keyframes popIn {
+    from { transform: scale(0.85); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+
+  .save-title { font-size: 17px; font-weight: 700; margin-bottom: 6px; color: #1a1d2e; }
+  .save-name { font-size: 13px; color: #8891aa; margin-bottom: 16px; }
+
+  .save-phone-box {
+    background: #eef1fa; border: 2px dashed #3b6ef8;
+    border-radius: 14px; padding: 16px 18px;
+    display: flex; align-items: center; justify-content: space-between;
+    cursor: pointer; margin-bottom: 20px; transition: background 0.15s;
+  }
+
+  .save-phone-box:active { background: #dde4ff; }
+
+  .save-phone-box span:first-child {
+    font-family: 'DM Mono', monospace; font-size: 20px;
+    font-weight: 700; color: #3b6ef8; letter-spacing: 1px;
+  }
+
+  .copy-badge {
+    font-size: 11px !important; font-weight: 600 !important;
+    background: #3b6ef8; color: #fff !important;
+    padding: 4px 10px; border-radius: 20px; letter-spacing: 0 !important;
+    font-family: 'Noto Sans KR', sans-serif !important;
+  }
+
+  .copy-badge.copied { background: #1dd1a1; }
+
+  .save-steps { display: flex; flex-direction: column; gap: 10px; margin-bottom: 22px; }
+
+  .save-step {
+    display: flex; align-items: center; gap: 12px;
+    font-size: 13px; color: #4a5270;
+  }
+
+  .step-num {
+    width: 24px; height: 24px; border-radius: 50%;
+    background: linear-gradient(135deg,#3b6ef8,#6c4fff);
+    color: #fff; font-size: 12px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+
+  .save-close {
+    width: 100%; background: linear-gradient(135deg,#3b6ef8,#6c4fff);
+    border: none; border-radius: 14px; padding: 14px;
+    font-size: 15px; font-family: 'Noto Sans KR', sans-serif;
+    font-weight: 700; color: #fff; cursor: pointer;
+  }
 </style>
 </head>
 <body>
@@ -275,10 +341,28 @@
       </a>
       <button class="sheet-btn btn-save" onclick="saveContact()">
         <div class="btn-icon">💾</div>
-        <div class="btn-text">연락처 저장<div class="btn-desc">휴대폰 연락처에 추가</div></div>
+        <div class="btn-text">연락처 저장<div class="btn-desc">번호 복사 후 저장 안내</div></div>
       </button>
     </div>
     <button class="sheet-cancel" onclick="closeSheet()">취소</button>
+  </div>
+</div>
+
+<!-- 저장 안내 팝업 -->
+<div class="save-overlay" id="saveOverlay" style="display:none" onclick="if(event.target===this)closeSave()">
+  <div class="save-popup">
+    <div class="save-title">📱 연락처 저장 방법</div>
+    <div class="save-name" id="saveName"></div>
+    <div class="save-phone-box" id="savePhoneBox" onclick="copyPhone()">
+      <span id="savePhoneNum"></span>
+      <span class="copy-badge" id="copyBadge">탭하여 복사</span>
+    </div>
+    <div class="save-steps">
+      <div class="save-step"><span class="step-num">1</span><span>위 번호를 탭해서 복사하세요</span></div>
+      <div class="save-step"><span class="step-num">2</span><span>전화 앱 → 키패드 → 번호 붙여넣기</span></div>
+      <div class="save-step"><span class="step-num">3</span><span>새 연락처로 저장</span></div>
+    </div>
+    <button class="save-close" onclick="closeSave()">확인</button>
   </div>
 </div>
 
@@ -522,27 +606,37 @@ function closeSheet() {
 function saveContact() {
   if (!currentContact) return;
   const c = currentContact;
-  const vcard = [
-    "BEGIN:VCARD", "VERSION:3.0",
-    "FN:" + c.name,
-    "N:" + c.name[0] + ";" + c.name.slice(1) + ";;;",
-    "TEL;TYPE=CELL:" + c.phone,
-    "TITLE:" + c.subject,
-    "END:VCARD"
-  ].join("\r\n");
+  // 저장 안내 팝업 열기
+  document.getElementById('saveName').textContent = c.name + ' ' + c.subject;
+  document.getElementById('savePhoneNum').textContent = c.phone;
+  document.getElementById('copyBadge').textContent = '탭하여 복사';
+  document.getElementById('copyBadge').className = 'copy-badge';
+  document.getElementById('saveOverlay').style.display = 'flex';
+  // 자동 클립보드 복사 시도
+  copyPhone();
+}
 
-  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
-  if (isIOS) {
-    window.location.href = "data:text/vcard;charset=utf-8," + encodeURIComponent(vcard);
+function copyPhone() {
+  const phone = document.getElementById('savePhoneNum').textContent;
+  const badge = document.getElementById('copyBadge');
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(phone).then(() => {
+      badge.textContent = '✓ 복사됨!';
+      badge.className = 'copy-badge copied';
+    });
   } else {
-    const blob = new Blob([vcard], { type: "text/vcard;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url; a.download = c.name + ".vcf";
-    document.body.appendChild(a); a.click();
-    document.body.removeChild(a); URL.revokeObjectURL(url);
+    // fallback
+    const ta = document.createElement('textarea');
+    ta.value = phone;
+    ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.focus(); ta.select();
+    try { document.execCommand('copy'); badge.textContent = '✓ 복사됨!'; badge.className = 'copy-badge copied'; } catch(e) {}
+    document.body.removeChild(ta);
   }
-  closeSheet();
+}
+
+function closeSave() {
+  document.getElementById('saveOverlay').style.display = 'none';
 }
 
 buildFilters();
