@@ -2,7 +2,14 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="교사 연락처">
+<meta name="theme-color" content="#3b6ef8">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
 <title>교사 연락처</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -606,14 +613,25 @@ function closeSheet() {
 function saveContact() {
   if (!currentContact) return;
   const c = currentContact;
-  // 저장 안내 팝업 열기
-  document.getElementById('saveName').textContent = c.name + ' ' + c.subject;
-  document.getElementById('savePhoneNum').textContent = c.phone;
-  document.getElementById('copyBadge').textContent = '탭하여 복사';
-  document.getElementById('copyBadge').className = 'copy-badge';
-  document.getElementById('saveOverlay').style.display = 'flex';
-  // 자동 클립보드 복사 시도
-  copyPhone();
+  const vcard = [
+    "BEGIN:VCARD", "VERSION:3.0",
+    "FN:" + c.name,
+    "N:" + c.name[0] + ";" + c.name.slice(1) + ";;;",
+    "TEL;TYPE=CELL:" + c.phone,
+    "TITLE:" + c.subject,
+    "ORG:학교",
+    "END:VCARD"
+  ].join("\r\n");
+
+  const blob = new Blob([vcard], { type: "text/vcard" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = c.name + ".vcf";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 function copyPhone() {
