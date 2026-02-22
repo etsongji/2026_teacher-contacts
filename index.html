@@ -6,11 +6,11 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="교사 연락처">
+<meta name="apple-mobile-web-app-title" content="충주고 교직원 연락처">
 <meta name="theme-color" content="#3b6ef8">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
-<title>교사 연락처</title>
+<title>2026. 충주고 교직원 연락처</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -313,7 +313,7 @@
 <body>
 
 <header>
-  <div class="header-title">📋 교사 연락처</div>
+  <div class="header-title">📋 2026. 충주고 교직원 연락처</div>
   <div class="header-sub">이름을 탭하면 전화·저장 선택</div>
   <div class="search-bar">
     <span class="search-icon">🔍</span>
@@ -403,7 +403,7 @@ const CONTACTS = [
   {name:"박동환", subject:"지구과학", phone:"010-3289-5385"},
   {name:"박익선", subject:"수학", phone:"010-4465-7238"},
   {name:"박지훈", subject:"정보", phone:"010-8887-5792"},
-  {name:"변지형", subject:"지구과학", phone:"010-2325-2570"},
+  {name:"변지형", subject:"지구과학", phone:"010-2430-0304"},
   {name:"서예림", subject:"음악", phone:"010-2900-0030"},
   {name:"송지언", subject:"영어", phone:"010-5192-2897"},
   {name:"신동호", subject:"국어", phone:"010-5566-1763"},
@@ -610,28 +610,47 @@ function closeSheet() {
   currentContact = null;
 }
 
+function isPWA() {
+  return window.navigator.standalone === true ||
+         window.matchMedia('(display-mode: standalone)').matches;
+}
+
 function saveContact() {
   if (!currentContact) return;
   const c = currentContact;
-  const vcard = [
-    "BEGIN:VCARD", "VERSION:3.0",
-    "FN:" + c.name,
-    "N:" + c.name[0] + ";" + c.name.slice(1) + ";;;",
-    "TEL;TYPE=CELL:" + c.phone,
-    "TITLE:" + c.subject,
-    "ORG:학교",
-    "END:VCARD"
-  ].join("\r\n");
 
-  const blob = new Blob([vcard], { type: "text/vcard" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = c.name + ".vcf";
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  if (isPWA()) {
+    // ── 앱 모드: .vcf 파일로 바로 저장 ──
+    const vcard = [
+      "BEGIN:VCARD", "VERSION:3.0",
+      "FN:" + c.name,
+      "N:" + c.name[0] + ";" + c.name.slice(1) + ";;;",
+      "TEL;TYPE=CELL:" + c.phone,
+      "TITLE:" + c.subject,
+      "ORG:충주고",
+      "END:VCARD"
+    ].join("\r\n");
+
+    const blob = new Blob([vcard], { type: "text/vcard" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = c.name + ".vcf";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    closeSheet();
+  } else {
+    // ── 웹 모드: 번호 복사 + 안내 팝업 ──
+    document.getElementById('saveName').textContent = c.name + ' · ' + c.subject;
+    document.getElementById('savePhoneNum').textContent = c.phone;
+    document.getElementById('copyBadge').textContent = '탭하여 복사';
+    document.getElementById('copyBadge').className = 'copy-badge';
+    document.getElementById('saveOverlay').style.display = 'flex';
+    closeSheet();
+    copyPhone();
+  }
 }
 
 function copyPhone() {
